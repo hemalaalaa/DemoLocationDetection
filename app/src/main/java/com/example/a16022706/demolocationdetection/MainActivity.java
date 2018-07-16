@@ -39,81 +39,86 @@ public class MainActivity extends AppCompatActivity {
 
         client = LocationServices.getFusedLocationProviderClient(this);
 
-
-
-
-
-
-
-    btnGetLastLocation.setOnClickListener(new View.OnClickListener(){
-        @Override
-        public void onClick(View v){
-            if (checkPermission() == true){
-
-                Task<Location> task = client.getLastLocation();
-                task.addOnSuccessListener(MainActivity.this, new OnSuccessListener<Location>(){
-                    @Override
-                    public void onSuccess(Location location){
-                    if (location != null) {
-                        String msg = "Lat" + location.getLatitude() +
-                                "Lng : " + location.getLongitude();
-                        Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
-
-                    } else {
-                        String msg = "No Last Known Location found";
-                        Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
-
-                    }
-
+        final LocationCallback mLocationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (locationResult != null) {
+                    Location data = locationResult.getLastLocation();
+                    double lat = data.getLatitude();
+                    double lng = data.getLongitude();
+                    String msg = "(Updated) Lat" + lat +
+                            "Lng : " + lng;
+                    Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
                 }
-                });
             }
-            else{
+        };
 
-                String msg = "Permission not granted to retrieve location info";
-                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
 
-            }
 
-        }
-    });
 
-        btnGetLocationUpdate.setOnClickListener(new View.OnClickListener(){
 
+        btnGetLastLocation.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 if (checkPermission() == true) {
-                    LocationRequest mLocationRequest = new LocationRequest();
-                    mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-                    mLocationRequest.setInterval(10000);
-                    mLocationRequest.setFastestInterval(5000);
-                    mLocationRequest.setSmallestDisplacement(100);
-                    client.requestLocationUpdates(mLocationRequest, mLocationCallback,null);
 
-
-                }
-                else{
+                    Task<Location> task = client.getLastLocation();
+                    task.addOnSuccessListener(MainActivity.this, new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            // Got last known location. In some rare situations this can be null.
+                            if (location != null) {
+                                String msg = "Lat : " + location.getLatitude() +
+                                        " Lng : " + location.getLongitude();
+                                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+                            } else {
+                                String msg = "No Last Known Location found";
+                                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                } else {
                     String msg = "Permission not granted to retrieve location info";
                     Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
-//                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION});
-
-
+                    ActivityCompat.requestPermissions(MainActivity.this,
+                            new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
                 }
-
             }
-
         });
 
 
-        btnRemoveLocationUpdate.setOnClickListener(new View.OnClickListener(){
 
+
+        btnGetLocationUpdate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
+                LocationRequest mLocationRequest = new LocationRequest();
+                mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+                mLocationRequest.setInterval(10000);
+                mLocationRequest.setFastestInterval(5000);
+                mLocationRequest.setSmallestDisplacement(100);
+                if (checkPermission() == true) {
+                    client.requestLocationUpdates(mLocationRequest, mLocationCallback, null);
+                } else {
+                    String msg = "Permission not granted to retrieve location info";
+                    Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+                    ActivityCompat.requestPermissions(MainActivity.this,
+                            new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
+                }
             }
         });
-        }
+
+        btnRemoveLocationUpdate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                client.removeLocationUpdates(mLocationCallback);
+            }
+        });
+
+    }
 
 
     private boolean checkPermission(){
@@ -129,24 +134,5 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
     }
-
-    LocationCallback mLocationCallback = new LocationCallback() {
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            if (locationResult != null) {
-                Location data = locationResult.getLastLocation();
-                double lat = data.getLatitude();
-                double lng = data.getLongitude();
-                String msg = "Lat" + lat +
-                        "Lng : " + lng;
-                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
-
-            }
-        };
-    };
-
-
-
-
 
 }
